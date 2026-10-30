@@ -313,13 +313,30 @@ function OperatorPortal() {
     if (loggedIn) post({ type: "sync", tokens, shipments });
   }, [tokens, shipments, loggedIn]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  function login(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const f = new FormData(e.currentTarget);
-    const r = demoLoginSchema.safeParse({ usuario: f.get("usuario"), password: f.get("password") });
-    if (!r.success) { setError(r.error.issues[0]?.message ?? "Completá tus datos."); return; }
-    setError(""); e.currentTarget.reset(); setLoggedIn(true);
+async function login(e: FormEvent<HTMLFormElement>) {
+  e.preventDefault();
+
+  const f = new FormData(e.currentTarget);
+
+  try {
+    const response = await loginOperario(
+      String(f.get("usuario")),
+      String(f.get("password"))
+    );
+
+    localStorage.setItem(
+      "token",
+      response.token
+    );
+
+    setError("");
+    e.currentTarget.reset();
+    setLoggedIn(true);
+
+  } catch {
+    setError("Usuario o contraseña incorrectos.");
   }
+}
 
   function logout() {
     post({ type: "sync", tokens: [], shipments: [] });
