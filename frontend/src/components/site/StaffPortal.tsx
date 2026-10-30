@@ -1,3 +1,4 @@
+import { loginRepartidor } from "@/lib/api";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { loginOperario } from "@/lib/api";
 import { ArrowRight, Check, KeyRound, LogOut, PackagePlus, Trash2, Truck, X } from "lucide-react";
@@ -67,11 +68,40 @@ function DriverPortal() {
 
   useEffect(() => { if (token && state && !state.tokens.some((t) => t.token === token.token)) { setToken(null); setError("Tu token fue dado de baja."); } }, [state, token]);
 
-  function login(e: FormEvent<HTMLFormElement>) {
+  async function login(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const tVal = new FormData(e.currentTarget).get("token")?.toString().toUpperCase() ?? "";
-    if (tVal.length !== 4) { setError("El token debe tener 4 caracteres."); return; }
-    setError(""); setPending(tVal); post({ type: "request" });
+    const formData = new FormData(e.currentTarget);
+    const tokenInput = formData.get("token")?.toString().trim().toUpperCase() ?? "";
+
+    if (!tokenInput) {
+      setError("Por favor, ingresá el token.");
+      return;
+    }
+
+    setError("");
+    setPending(tokenInput);
+
+    try {
+      // Llamada al backend de FastAPI mediante la función centralizada en api.ts
+      const data = await loginRepartidor(tokenInput);
+
+      // Guardamos la sesión del repartidor con los datos retornados por la API
+      setToken({
+        token: tokenInput,
+        nombre: data.nombre || "Repartidor",
+        documento: data.documento || "",
+        correo: data.correo || "",
+        pesoMaxKg: data.pesoMaxKg || 0,
+        dimensionesMax: data.dimensionesMax || "",
+        habilitado: true,
+        activo: true,
+      });
+      setError("");
+    } catch (err: any) {
+      setError(err.message || "Token inválido o error al conectar con el servidor.");
+    } finally {
+      setPending(null);
+    }
   }
 
   const mine = token && state ? state.shipments.filter((s) => s.repartidor === token.token) : [];
