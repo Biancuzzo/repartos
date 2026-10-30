@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { loginOperario } from "@/lib/api";
 import { ArrowRight, Check, KeyRound, LogOut, PackagePlus, Trash2, Truck, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Header } from "./Header";
@@ -66,7 +67,7 @@ function DriverPortal() {
 
   useEffect(() => { if (token && state && !state.tokens.some((t) => t.token === token.token)) { setToken(null); setError("Tu token fue dado de baja."); } }, [state, token]);
 
-  function login(e: FormEvent<HTMLFormElement>) {
+  (e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const tVal = new FormData(e.currentTarget).get("token")?.toString().toUpperCase() ?? "";
     if (tVal.length !== 4) { setError("El token debe tener 4 caracteres."); return; }
@@ -312,14 +313,39 @@ function OperatorPortal() {
     if (loggedIn) post({ type: "sync", tokens, shipments });
   }, [tokens, shipments, loggedIn]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  function login(e: FormEvent<HTMLFormElement>) {
+  (e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
     const r = demoLoginSchema.safeParse({ usuario: f.get("usuario"), password: f.get("password") });
     if (!r.success) { setError(r.error.issues[0]?.message ?? "Completá tus datos."); return; }
     setError(""); e.currentTarget.reset(); setLoggedIn(true);
   }
+  
+  async function login(e: FormEvent<HTMLFormElement>) {
+  e.preventDefault();
 
+  const f = new FormData(e.currentTarget);
+
+  try {
+    const data = await loginOperario(
+      String(f.get("usuario")),
+      String(f.get("password"))
+    );
+
+    localStorage.setItem(
+      "token",
+      data.token
+    );
+
+    setLoggedIn(true);
+    setError("");
+    e.currentTarget.reset();
+
+  } catch {
+    setError("Usuario o contraseña incorrectos.");
+  }
+  }
+  
   function logout() {
     post({ type: "sync", tokens: [], shipments: [] });
     setLoggedIn(false); setError(""); setAdding(false); setDraft(emptyShipment);
