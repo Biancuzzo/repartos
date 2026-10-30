@@ -24,3 +24,24 @@ export async function loginOperario(
 
   return response.json();
 }
+export async function loginRepartidor(token: string) {
+  const response = await fetch(
+    `${API_URL}/repartidor/login`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        token,
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Token inválido o error en el servidor.");
+  }
+
+  return response.json();
+}
+
